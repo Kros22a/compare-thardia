@@ -16,7 +16,7 @@ app.add_middleware(
 )
 
 # Cliente de OpenAI (usa la nueva API oficial)
-client = OpenAI(api_key=os.getenv("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"))
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 class CompareRequest(BaseModel):
     producto1: str
