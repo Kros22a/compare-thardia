@@ -1,47 +1,32 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import os
 from openai import OpenAI
+import os
 
 app = FastAPI()
 
-# Configurar CORS (para permitir peticiones desde el frontend)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+# Cliente de Groq (compatible con OpenAI)
+client = OpenAI(
+    api_key=os.getenv("GROQ_API_KEY"),
+    base_url="https://api.groq.com/openai/v1"
 )
 
-# Cliente de OpenAI (usa la nueva API oficial)
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-class CompareRequest(BaseModel):
+class ComparacionRequest(BaseModel):
     producto1: str
     producto2: str
 
 @app.get("/")
-def root():
-    return {"message": "API de T-HardIA activa ✅"}
+def home():
+    return {"message": "API de T-HardIA (Groq) activa ✅"}
 
 @app.post("/comparar")
-def comparar_productos(data: CompareRequest):
-    prompt = f"""
-    Compara estos dos productos de hardware y genera un análisis técnico breve y objetivo:
-    1. {data.producto1}
-    2. {data.producto2}
-    Incluye rendimiento, eficiencia, calidad, ventajas y desventajas.
-    """
-
+def comparar(req: ComparacionRequest):
     try:
+        prompt = f"Compara los productos de hardware:\n1️⃣ {req.producto1}\n2️⃣ {req.producto2}\nEn rendimiento, consumo, precio y mejor opción general."
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="llama-3.1-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=300
         )
-        result = response.choices[0].message.content
-        return {"comparacion": result}
+        return {"comparacion": response.choices[0].message.content}
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
