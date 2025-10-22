@@ -1,40 +1,59 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from openai import OpenAI
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 import os
+import requests
 
 app = FastAPI()
 
-# Cliente de Groq (API 100% compatible con OpenAI)
-client = OpenAI(
-    api_key=os.getenv("GROQ_API_KEY"),
-    base_url="https://api.groq.com/openai/v1"
+# Permitir CORS para tu frontend
+origins = [
+    "*",  # Puedes restringirlo a tu dominio más adelante
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # permite GET, POST, etc.
+    allow_headers=["*"],
 )
 
-class ComparacionRequest(BaseModel):
-    producto1: str
-    producto2: str
+# Tu API key de Groq
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_URL = "https://api.groq.com/v1/completions"  # o la URL actual que uses
 
 @app.get("/")
-def home():
+async def root():
     return {"message": "API de T-HardIA (Groq) activa ✅"}
 
 @app.post("/comparar")
-def comparar(req: ComparacionRequest):
-    try:
-        prompt = (
-            f"Compara los siguientes productos de hardware:\n"
-            f"1️⃣ {req.producto1}\n"
-            f"2️⃣ {req.producto2}\n\n"
-            f"Evalúa rendimiento, eficiencia energética, temperatura, precio y cuál conviene más para un usuario gamer o profesional."
-        )
+async def comparar_hardware(request: Request):
+    data = await request.json()
+    producto1 = data.get("producto1")
+    producto2 = data.get("producto2")
 
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",  # 🔥 Modelo activo y recomendado por Groq
-            messages=[{"role": "user", "content": prompt}],
-        )
+    if not producto1 or not producto2:
+        return {"error": "Debes enviar producto1 y producto2"}
 
-        return {"comparacion": response.choices[0].message.content}
+    prompt = f"Comparar los siguientes productos de hardware y generar un análisis detallado: {producto1} vs {producto2}"
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "model": "llama-3.1-mini",  # Asegúrate de usar un modelo activo
+        "prompt": prompt,
+        "max_tokens": 1000
+    }
+
+    response = requests.post(GROQ_URL, headers=headers, json=payload)
+    if response.status_code != 200:
+        return {"error": response.json()}
+
+    result = response.json()
+    # Ajusta según el JSON que Groq devuelva
+    comparacion = result.get("completion", "No se obtuvo respuesta del modelo")
+
+    return {"comparacion": comparacion}
