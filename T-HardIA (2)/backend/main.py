@@ -1,59 +1,74 @@
+# main.py
+import os
+import json
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-import os
 import requests
 
 app = FastAPI()
 
-# Permitir CORS para tu frontend
-origins = [
-    "*",  # Puedes restringirlo a tu dominio más adelante
-]
-
+# Configurar CORS para que tu frontend pueda acceder al backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # Cambia esto a tu dominio en producción
     allow_credentials=True,
-    allow_methods=["*"],  # permite GET, POST, etc.
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Tu API key de Groq
+# URL de Groq
+GROQ_URL = "https://api.groq.com/v1/llama-3.1-mini/completions"
+
+# Tu clave se toma de variable de entorno
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_URL = "https://api.groq.com/v1/completions"  # o la URL actual que uses
+
+if not GROQ_API_KEY:
+    raise ValueError("❌ La variable de entorno GROQ_API_KEY no está configurada.")
 
 @app.get("/")
 async def root():
     return {"message": "API de T-HardIA (Groq) activa ✅"}
 
 @app.post("/comparar")
-async def comparar_hardware(request: Request):
-    data = await request.json()
-    producto1 = data.get("producto1")
-    producto2 = data.get("producto2")
+async def comparar(request: Request):
+    """
+    Endpoint que recibe JSON con 'hardware1' y 'hardware2'
+    y devuelve la comparación en texto formateado.
+    """
+    try:
+        data = await request.json()
+        hardware1 = data.get("hardware1")
+        hardware2 = data.get("hardware2")
 
-    if not producto1 or not producto2:
-        return {"error": "Debes enviar producto1 y producto2"}
+        if not hardware1 or not hardware2:
+            return {"error": "Faltan los campos 'hardware1' o 'hardware2'."}
 
-    prompt = f"Comparar los siguientes productos de hardware y generar un análisis detallado: {producto1} vs {producto2}"
+        # Payload para Groq
+        payload = {
+            "prompt": f"Compara estos dos productos de hardware: {hardware1} vs {hardware2}. Genera un análisis detallado en español, incluyendo rendimiento, eficiencia energética, temperatura y precio, y concluye con recomendaciones.",
+            "max_tokens": 500,  # ajusta según tus necesidades
+            "temperature": 0.7,
+        }
 
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }
 
-    payload = {
-        "model": "llama-3.1-mini",  # Asegúrate de usar un modelo activo
-        "prompt": prompt,
-        "max_tokens": 1000
-    }
+        # Llamada a Groq
+        response = requests.post(GROQ_URL, headers=headers, json=payload)
+        response.raise_for_status()  # levanta error si status != 200
+        result = response.json()
 
-    response = requests.post(GROQ_URL, headers=headers, json=payload)
-    if response.status_code != 200:
-        return {"error": response.json()}
+        # Extraer el texto de la respuesta
+        comparacion = result.get("completions", [{}])[0].get("text", "No se obtuvo resultado.")
 
-    result = response.json()
-    # Ajusta según el JSON que Groq devuelva
-    comparacion = result.get("completion", "No se obtuvo respuesta del modelo")
+        return {"comparacion": comparacion}
 
-    return {"comparacion": comparacion}
+    except requests.exceptions.RequestException as e:
+        # Captura errores de la API de Groq
+        return {"error": f"Error en la API de Groq: {str(e)}"}
+
+    except Exception as e:
+        # Captura errores generales
+        return {"error": f"Error interno del servidor: {str(e)}"}
