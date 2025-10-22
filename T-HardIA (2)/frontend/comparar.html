@@ -1,74 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comparador de Hardware - T-HardIA</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-            padding: 20px;
-        }
-
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-
-        form {
-            max-width: 500px;
-            margin: 20px auto;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        input {
-            flex: 1;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-
-        button {
-            padding: 10px 15px;
-            border-radius: 5px;
-            border: none;
-            background-color: #007bff;
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        #resultadoComparacion {
-            max-width: 800px;
-            margin: 30px auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-            line-height: 1.6;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Comparador T-HardIA</title>
+<script src="js/comparar.js" defer></script>
 </head>
 <body>
+<h1>Comparar Hardware</h1>
+<input id="producto1" type="text" placeholder="Producto 1">
+<input id="producto2" type="text" placeholder="Producto 2">
+<button id="btnComparar">Comparar</button>
 
-    <h1>Comparador de Hardware - T-HardIA</h1>
-
-    <form id="formComparar">
-        <input id="producto1" placeholder="Producto 1">
-        <input id="producto2" placeholder="Producto 2">
-        <button type="submit">Comparar</button>
-    </form>
-
-    <div id="resultadoComparacion">Ingresa los productos y presiona "Comparar" para ver la comparativa.</div>
-
-    <script src="comparar.js"></script>
+<div id="resultado" style="margin-top:20px;"></div>
 </body>
 </html>
