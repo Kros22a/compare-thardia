@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comparar Hardware | T-HardIA</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1>Comparador de Hardware</h1>
+    <nav><a href="index.html">Inicio</a></nav>
+  </header>
+
+  <main>
+    <section>
+      <input type="text" id="producto1" placeholder="Ejemplo: Intel i9 14900K">
+      <input type="text" id="producto2" placeholder="Ejemplo: Ryzen 9 7950X">
+      <button onclick="comparar()">Comparar</button>
+    </section>
+
+    <section id="resultado" class="resultado">
+      <p>Esperando tu comparación...</p>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/comparar.js"></script>
+</body>
+</html>
