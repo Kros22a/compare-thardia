@@ -1,30 +1,87 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Comparar Hardware | T-HardIA</title>
-  <link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-HardIA Comparativa</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        #comparacion {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+            font-size: 16px;
+        }
+        button {
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>Comparador de Hardware</h1>
-    <nav><a href="index.html">Inicio</a></nav>
-  </header>
+    <h1>T-HardIA - Comparador de Hardware</h1>
 
-  <main>
-    <section>
-      <input type="text" id="producto1" placeholder="Ejemplo: Intel i9 14900K">
-      <input type="text" id="producto2" placeholder="Ejemplo: Ryzen 9 7950X">
-      <button onclick="comparar()">Comparar</button>
-    </section>
+    <input type="text" id="producto1" placeholder="Ingresa primer producto (ej. Ryzen 7 7800X3D)">
+    <input type="text" id="producto2" placeholder="Ingresa segundo producto (ej. Intel i7 14700K)">
+    <button onclick="comparar()">Comparar</button>
 
-    <section id="resultado" class="resultado">
-      <p>Esperando tu comparación...</p>
-    </section>
-  </main>
+    <div id="comparacion">
+        <!-- Aquí se mostrará la comparativa -->
+    </div>
 
-  <script src="js/api.js"></script>
-  <script src="js/comparar.js"></script>
+    <script>
+        const API_URL = "https://t-hardia-backend.vercel.app"; // tu backend
+
+        async function comparar() {
+            const prod1 = document.getElementById("producto1").value;
+            const prod2 = document.getElementById("producto2").value;
+
+            if (!prod1 || !prod2) {
+                alert("Por favor ingresa ambos productos");
+                return;
+            }
+
+            const comparacionDiv = document.getElementById("comparacion");
+            comparacionDiv.innerHTML = "Generando comparativa...";
+
+            try {
+                const response = await fetch(`${API_URL}/comparar`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ producto1: prod1, producto2: prod2 })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    comparacionDiv.innerHTML = `<p style="color:red;">Error: ${data.error}</p>`;
+                    return;
+                }
+
+                // Renderizamos Markdown usando marked.js
+                comparacionDiv.innerHTML = marked.parse(data.comparacion);
+
+            } catch (err) {
+                comparacionDiv.innerHTML = `<p style="color:red;">Error al conectar con el backend: ${err}</p>`;
+            }
+        }
+    </script>
 </body>
 </html>
