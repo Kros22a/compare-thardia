@@ -17,8 +17,7 @@ compararBtn.addEventListener("click", async () => {
     resultadoPre.textContent = "Generando comparación...";
 
     try {
-        const response = await fetch(`${https://t-hardia-backend.vercel.app
-}/comparar`, {
+        const response = await fetch(`${API_URL}/comparar`, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({ hardware1, hardware2 })
