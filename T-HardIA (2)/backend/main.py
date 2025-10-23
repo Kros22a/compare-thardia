@@ -1,74 +1,47 @@
-# main.py
 import os
 import json
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 import requests
+from flask import Flask, request, jsonify
 
-app = FastAPI()
+app = Flask(__name__)
 
-# Configurar CORS para que tu frontend pueda acceder al backend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Cambia esto a tu dominio en producción
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+GROQ_API_URL = "https://api.groq.com/v1/completions"
 
-# URL de Groq
-GROQ_URL = "https://api.groq.com/v1/llama-3.1-mini/completions"
+@app.route("/comparar", methods=["POST"])
+def comparar():
+    data = request.json
+    hardware1 = data.get("hardware1")
+    hardware2 = data.get("hardware2")
 
-# Tu clave se toma de variable de entorno
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+    if not hardware1 or not hardware2:
+        return jsonify({"error": "Debes enviar ambos hardware"}), 400
 
-if not GROQ_API_KEY:
-    raise ValueError("❌ La variable de entorno GROQ_API_KEY no está configurada.")
+    prompt = f"Comparar estos dos productos de hardware: {hardware1} vs {hardware2} y dar un análisis detallado de rendimiento, eficiencia energética, temperatura y precio."
 
-@app.get("/")
-async def root():
-    return {"message": "API de T-HardIA (Groq) activa ✅"}
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
 
-@app.post("/comparar")
-async def comparar(request: Request):
-    """
-    Endpoint que recibe JSON con 'hardware1' y 'hardware2'
-    y devuelve la comparación en texto formateado.
-    """
+    payload = {
+        "model": "llama-3.1-7b",  # Modelo activo recomendado por Groq
+        "prompt": prompt,
+        "max_tokens": 800
+    }
+
     try:
-        data = await request.json()
-        hardware1 = data.get("hardware1")
-        hardware2 = data.get("hardware2")
-
-        if not hardware1 or not hardware2:
-            return {"error": "Faltan los campos 'hardware1' o 'hardware2'."}
-
-        # Payload para Groq
-        payload = {
-            "prompt": f"Compara estos dos productos de hardware: {hardware1} vs {hardware2}. Genera un análisis detallado en español, incluyendo rendimiento, eficiencia energética, temperatura y precio, y concluye con recomendaciones.",
-            "max_tokens": 500,  # ajusta según tus necesidades
-            "temperature": 0.7,
-        }
-
-        headers = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json"
-        }
-
-        # Llamada a Groq
-        response = requests.post(GROQ_URL, headers=headers, json=payload)
-        response.raise_for_status()  # levanta error si status != 200
+        response = requests.post(GROQ_API_URL, headers=headers, json=payload)
         result = response.json()
 
-        # Extraer el texto de la respuesta
-        comparacion = result.get("completions", [{}])[0].get("text", "No se obtuvo resultado.")
+        # Suponiendo que Groq devuelve 'completion' en la respuesta
+        comparacion = result.get("completion", "No se pudo generar la comparación")
 
-        return {"comparacion": comparacion}
-
-    except requests.exceptions.RequestException as e:
-        # Captura errores de la API de Groq
-        return {"error": f"Error en la API de Groq: {str(e)}"}
+        return jsonify({"comparacion": comparacion})
 
     except Exception as e:
-        # Captura errores generales
-        return {"error": f"Error interno del servidor: {str(e)}"}
+        return jsonify({"error": str(e)}), 500
+
+# Para ejecutar localmente
+if __name__ == "__main__":
+    app.run(debug=True)
